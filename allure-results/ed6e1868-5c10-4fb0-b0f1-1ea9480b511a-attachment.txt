@@ -1,0 +1,4 @@
+GET https://petstore.swagger.io/v2/user/qa_ccfytrud
+status: 200
+
+{"id":999383,"username":"qa_ccfytrud","firstName":"Пётр","lastName":"Петров","email":"ivan@example.com","password":"secret","phone":"8999999999","userStatus":1}

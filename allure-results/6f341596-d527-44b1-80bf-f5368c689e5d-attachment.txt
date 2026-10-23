@@ -1,0 +1,4 @@
+DELETE https://petstore.swagger.io/v2/store/order/953201
+status: 200
+
+{"code":200,"type":"unknown","message":"953201"}

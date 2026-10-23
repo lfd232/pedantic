@@ -1,0 +1,4 @@
+GET https://petstore.swagger.io/v2/user/qa_vfwnqvwv
+status: 200
+
+{"id":933857,"username":"qa_vfwnqvwv","firstName":"Иван","lastName":"Петров","email":"ivan@example.com","password":"secret","phone":"8999999999","userStatus":1}

@@ -1,0 +1,8 @@
+'--------------------------------------------------'
+'POST https://petstore.swagger.io/v2/user'
+'status: 200'
+{'code': 200, 'message': '974705', 'type': 'unknown'}
+'--------------------------------------------------'
+'DELETE https://petstore.swagger.io/v2/user/qa_pehajdtd'
+'status: 200'
+{'code': 200, 'message': 'qa_pehajdtd', 'type': 'unknown'}

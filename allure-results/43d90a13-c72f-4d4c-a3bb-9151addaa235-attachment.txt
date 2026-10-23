@@ -1,0 +1,4 @@
+POST https://petstore.swagger.io/v2/user
+status: 200
+
+{"code":200,"type":"unknown","message":"963549"}

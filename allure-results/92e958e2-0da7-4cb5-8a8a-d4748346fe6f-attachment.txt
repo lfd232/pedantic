@@ -1,0 +1,21 @@
+'--------------------------------------------------'
+'POST https://petstore.swagger.io/v2/store/order'
+'status: 200'
+{'complete': True,
+ 'id': 953977,
+ 'petId': 1,
+ 'quantity': 1,
+ 'shipDate': '2026-01-01T00:00:00.000+0000',
+ 'status': 'placed'}
+'--------------------------------------------------'
+'DELETE https://petstore.swagger.io/v2/store/order/953977'
+'status: 200'
+{'code': 200, 'message': '953977', 'type': 'unknown'}
+'--------------------------------------------------'
+'GET https://petstore.swagger.io/v2/store/order/953977'
+'status: 404'
+{'code': 1, 'message': 'Order not found', 'type': 'error'}
+'--------------------------------------------------'
+'DELETE https://petstore.swagger.io/v2/store/order/953977'
+'status: 404'
+{'code': 404, 'message': 'Order Not Found', 'type': 'unknown'}

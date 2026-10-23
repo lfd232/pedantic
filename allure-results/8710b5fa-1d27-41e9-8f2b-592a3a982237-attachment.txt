@@ -1,0 +1,31 @@
+'--------------------------------------------------'
+'POST https://petstore.swagger.io/v2/user'
+'status: 200'
+{'code': 200, 'message': '964848', 'type': 'unknown'}
+'--------------------------------------------------'
+'POST https://petstore.swagger.io/v2/user'
+'status: 200'
+{'code': 200, 'message': '914439', 'type': 'unknown'}
+'--------------------------------------------------'
+'PUT https://petstore.swagger.io/v2/user/qa_dofyyrgr'
+'status: 200'
+{'code': 200, 'message': '964848', 'type': 'unknown'}
+'--------------------------------------------------'
+'GET https://petstore.swagger.io/v2/user/qa_xzzellky'
+'status: 200'
+{'email': 'ivan@example.com',
+ 'firstName': 'Иван',
+ 'id': 914439,
+ 'lastName': 'Петров',
+ 'password': 'secret',
+ 'phone': '8999999999',
+ 'userStatus': 1,
+ 'username': 'qa_xzzellky'}
+'--------------------------------------------------'
+'DELETE https://petstore.swagger.io/v2/user/qa_xzzellky'
+'status: 200'
+{'code': 200, 'message': 'qa_xzzellky', 'type': 'unknown'}
+'--------------------------------------------------'
+'DELETE https://petstore.swagger.io/v2/user/qa_dofyyrgr'
+'status: 200'
+{'code': 200, 'message': 'qa_dofyyrgr', 'type': 'unknown'}

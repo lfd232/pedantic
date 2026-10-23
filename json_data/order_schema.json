@@ -1,0 +1,41 @@
+{
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "integer"
+    },
+    "petId": {
+      "default": 1,
+      "title": "Petid",
+      "type": "integer"
+    },
+    "quantity": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Quantity",
+      "type": "integer"
+    },
+    "shipDate": {
+      "format": "date-time",
+      "title": "Shipdate",
+      "type": "string"
+    },
+    "status": {
+      "default": "placed",
+      "enum": [
+        "placed",
+        "approved",
+        "delivered"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "complete": {
+      "default": true,
+      "title": "Complete",
+      "type": "boolean"
+    }
+  },
+  "title": "Order",
+  "type": "object"
+}

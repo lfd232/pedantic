@@ -1,0 +1,4 @@
+POST https://petstore.swagger.io/v2/store/order
+status: 200
+
+{"id":953201,"petId":1,"quantity":1,"shipDate":"2026-01-01T00:00:00.000+0000","status":"placed","complete":true}

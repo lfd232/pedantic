@@ -1,0 +1,4 @@
+GET https://petstore.swagger.io/v2/store/order/953977
+status: 404
+
+{"code":1,"type":"error","message":"Order not found"}

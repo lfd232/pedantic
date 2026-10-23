@@ -1,0 +1,22 @@
+'--------------------------------------------------'
+'POST https://petstore.swagger.io/v2/store/order'
+'status: 200'
+{'complete': True,
+ 'id': 922417,
+ 'petId': 1,
+ 'quantity': 1,
+ 'shipDate': '2026-01-01T00:00:00.000+0000',
+ 'status': 'placed'}
+'--------------------------------------------------'
+'GET https://petstore.swagger.io/v2/store/order/922417'
+'status: 200'
+{'complete': True,
+ 'id': 922417,
+ 'petId': 1,
+ 'quantity': 1,
+ 'shipDate': '2026-01-01T00:00:00.000+0000',
+ 'status': 'placed'}
+'--------------------------------------------------'
+'DELETE https://petstore.swagger.io/v2/store/order/922417'
+'status: 200'
+{'code': 200, 'message': '922417', 'type': 'unknown'}

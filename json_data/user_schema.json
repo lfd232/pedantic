@@ -1,0 +1,44 @@
+{
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "integer"
+    },
+    "username": {
+      "title": "Username",
+      "type": "string"
+    },
+    "firstName": {
+      "default": "Иван",
+      "title": "Firstname",
+      "type": "string"
+    },
+    "lastName": {
+      "default": "Петров",
+      "title": "Lastname",
+      "type": "string"
+    },
+    "email": {
+      "default": "ivan@example.com",
+      "title": "Email",
+      "type": "string"
+    },
+    "password": {
+      "default": "secret",
+      "title": "Password",
+      "type": "string"
+    },
+    "phone": {
+      "default": "8999999999",
+      "title": "Phone",
+      "type": "string"
+    },
+    "userStatus": {
+      "default": 1,
+      "title": "Userstatus",
+      "type": "integer"
+    }
+  },
+  "title": "User",
+  "type": "object"
+}
