@@ -1,59 +1,81 @@
 """
-Базовый класс для работы с API.
+Базовый класс для работы с API (асинхронная версия на httpx).
 
-Это исправленная версия файла из репозитория
-https://github.com/sadboy2001/api_testing
+История исправлений оригинала из репозитория
+https://github.com/sadboy2001/api_testing :
 
-Оригинал содержал ошибки, которые нужно знать:
+1. Бесконечный цикл while: успехом теперь считается весь диапазон 200-299.
+2. Тело запроса уходит как JSON (json=json_body), а не как form-данные.
+3. Есть timeout, задаётся при создании объекта.
+4. Возвращается объект Response целиком, а не response.json()['message'].
+5. Код не выполняется при импорте: демонстрация под __main__.
+6. Логирование не падает на не-JSON ответе.
 
-1. Бесконечный цикл while
-   Было: while not stop_flag, выход только при status_code == 200
-   Проблема: любой успешный ответ 201 или 204 крутит цикл вечно.
-   Теперь успехом считается весь диапазон 200-299.
+Что добавлено в асинхронной версии:
+7. Все методы async: вызываются через await.
+8. Повтор запроса при обрыве соединения (petstore иногда рвёт связь).
+9. Соединения не переиспользуются: сервер обрывает простаивающие.
 
-2. Тело запроса уходило не как JSON
-   Было: requests.post(url, data=data)
-   Проблема: словарь уходит form-кодированным, а не JSON.
-   Теперь: requests.request(..., json=json_body)
-
-3. Не было timeout
-   Проблема: при зависшем API тест висит молча.
-   Теперь timeout задаётся при создании объекта.
-
-4. response.json()['message']
-   Проблема: KeyError, если в ответе нет поля message.
-   Теперь возвращается объект Response целиком.
-
-5. Код выполнялся при импорте
-   Было: вызовы get и post в конце файла без защиты.
-   Теперь демонстрация под if __name__ == '__main__'.
-
-6. Логирование response.json() падало на не-JSON ответе
-   Теперь ответ читается через try.
+Использование:
+    async with BaseRequest(BASE_URL) as api:
+        response = await api.get('store/inventory')
 """
-
+import asyncio
 import json
 import pprint
 
 import allure
-import requests
+import httpx
 
 BASE_URL = 'https://petstore.swagger.io/v2'
 
 
 class BaseRequest:
-    """Обёртка над requests с проверкой кодов ответа и логированием."""
+    """Асинхронная обёртка над httpx с проверкой кодов и логированием."""
 
-    def __init__(self, base_url, timeout=15):
+    def __init__(self, base_url, timeout=10, retries=3):
         # rstrip убирает лишний слеш, чтобы не было двойных
         self.base_url = base_url.rstrip('/')
-        self.timeout = timeout
-        self.session = requests.Session()
-        self.session.headers.update({'Content-Type': 'application/json'})
+        self.retries = retries
+        self.client = httpx.AsyncClient(
+            timeout=timeout,
+            headers={'Content-Type': 'application/json'},
+            follow_redirects=True,
+            limits=httpx.Limits(max_keepalive_connections=0),
+        )
 
-    def _request(self, method, path, json_body=None, expected_error=False):
-        url = f"{self.base_url}/{path.lstrip('/')}"
+    # --- async with BaseRequest(BASE_URL) as api: ... ---------------
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc_info):
+        await self.close()
+
+    async def close(self):
+        await self.client.aclose()
+
+    # --- внутренняя часть -------------------------------------------
+
+    def _url(self, path):
+        return f"{self.base_url}/{path.lstrip('/')}"
+
+    async def _send(self, method, path, json_body=None):
+        """Отправляет запрос; при обрыве соединения повторяет."""
+        last_error = None
+        for attempt in range(1, self.retries + 1):
+            try:
+                return await self.client.request(
+                    method, self._url(path), json=json_body
+                )
+            except (httpx.RemoteProtocolError, httpx.ConnectError,
+                    httpx.ReadError) as error:
+                last_error = error
+                await asyncio.sleep(0.3 * attempt)
+        raise last_error
+
+    async def _request(self, method, path, json_body=None,
+                       expected_error=False):
         with allure.step(f'{method} {path}'):
             if json_body is not None:
                 allure.attach(
@@ -62,20 +84,20 @@ class BaseRequest:
                     attachment_type=allure.attachment_type.JSON,
                 )
 
-            response = self.session.request(
-                method,
-                url,
-                json=json_body,
-                timeout=self.timeout,
-            )
+            response = await self._send(method, path, json_body)
 
             self._log(method, response)
-            self._attach_response(response)
+            allure.attach(
+                f'status: {response.status_code}\n\n{response.text[:2000]}',
+                name='Ответ',
+                attachment_type=allure.attachment_type.TEXT,
+            )
             self._check(response, expected_error)
             return response
 
-    def _check(self, response, expected_error):
-        """Проверяет код ответа. Успех — это 200-299."""
+    @staticmethod
+    def _check(response, expected_error):
+        """Проверяет код ответа. Успех это 200-299."""
         code = response.status_code
 
         if expected_error:
@@ -87,16 +109,8 @@ class BaseRequest:
                 f'Ждали успех, но получили {code}: {response.text[:200]}'
             )
 
-    def _attach_response(self, response):
-        """Прикладывает ответ к отчёту Allure."""
-        allure.attach(
-            f'{response.request.method} {response.url}\n'
-            f'status: {response.status_code}\n\n{response.text[:2000]}',
-            name='Ответ',
-            attachment_type=allure.attachment_type.TEXT,
-        )
-
-    def _log(self, method, response):
+    @staticmethod
+    def _log(method, response):
         """Печатает, что произошло. Не падает, если ответ не JSON."""
         pprint.pprint('-' * 50)
         pprint.pprint(f'{method} {response.url}')
@@ -107,52 +121,45 @@ class BaseRequest:
         except ValueError:
             pprint.pprint(response.text[:200])
 
-    # --- публичные методы -------------------------------------------
+    # --- публичные методы (CRUD) ------------------------------------
 
-    def get(self, path, expected_error=False):
-        return self._request('GET', path, expected_error=expected_error)
+    async def get(self, path, expected_error=False):
+        return await self._request('GET', path, expected_error=expected_error)
 
-    def post(self, path, json_body):
-        return self._request('POST', path, json_body=json_body)
+    async def post(self, path, json_body):
+        return await self._request('POST', path, json_body=json_body)
 
-    def put(self, path, json_body):
-        return self._request('PUT', path, json_body=json_body)
+    async def put(self, path, json_body):
+        return await self._request('PUT', path, json_body=json_body)
 
-    def delete(self, path, expected_error=False):
-        return self._request('DELETE', path, expected_error=expected_error)
+    async def delete(self, path, expected_error=False):
+        return await self._request(
+            'DELETE', path, expected_error=expected_error
+        )
 
-    def delete_quiet(self, path):
+    async def delete_quiet(self, path):
         """Удаляет объект, не проверяя код ответа.
 
-        Нужен для уборки за собой. Объекта может уже не быть:
-        тест успел его удалить сам, или тест упал раньше,
-        чем что-то создал.
-
-        Обычный delete здесь не годится. expected_error=True
-        требует ошибки, а если объект ещё есть, сервер
-        вернёт 200 и проверка упадёт.
-
-        Подсказка: уборку не проверяют, а просто выполняют.
+        Нужен для уборки за собой: объекта может уже не быть.
+        Уборку не проверяют, а просто выполняют, и она не роняет тест,
+        даже если сервер недоступен.
         """
-        url = f"{self.base_url}/{path.lstrip('/')}"
-
         with allure.step(f'Уборка: DELETE {path}'):
-            response = self.session.request(
-                'DELETE',
-                url,
-                timeout=self.timeout,
-            )
-
+            try:
+                response = await self._send('DELETE', path)
+            except httpx.HTTPError:
+                return None
             self._log('DELETE', response)
             return response
 
 
-base_request = BaseRequest(BASE_URL)
+async def _demo():
+    print('Проверяем, что API отвечает:')
+    async with BaseRequest(BASE_URL) as api:
+        answer = await api.get('pet/findByStatus?status=available')
+        print('Питомцев доступно:', len(answer.json()))
 
 
 if __name__ == '__main__':
-    # Этот блок не выполнится при импорте файла тестами.
-    # pytest подхватит только функции с именем test_.
-    print('Проверяем, что API отвечает:')
-    answer = base_request.get('pet/findByStatus?status=available')
-    print('Питомцев доступно:', len(answer.json()))
+    # Не выполнится при импорте файла тестами.
+    asyncio.run(_demo())
